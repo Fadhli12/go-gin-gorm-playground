@@ -14,11 +14,11 @@ type bookHandler struct {
 	bookService book.Service
 }
 
-type Config struct {
+type ConfigBook struct {
 	R *gin.Engine
 }
 
-func NewBookHandler(c *Config, db *gorm.DB) {
+func NewBookHandler(c *ConfigBook, db *gorm.DB) {
 
 	bookRepository := book.NewRepository(db)
 	bookService := book.NewService(bookRepository)

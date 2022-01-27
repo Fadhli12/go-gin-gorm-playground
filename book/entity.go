@@ -1,14 +1,17 @@
 package book
 
-import "time"
+import (
+	"github.com/Fadhli12/go-gin-gorm-playground/author"
+	"gorm.io/gorm"
+)
 
 type Book struct {
-	ID          int
+	gorm.Model
 	Title       string
 	Description string
 	Price       int
 	Rating      int
 	Discount    int
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	AuthorID    uint
+	Author      author.Author `gorm:"foreignKey:AuthorID"`
 }

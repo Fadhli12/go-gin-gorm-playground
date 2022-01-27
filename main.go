@@ -30,8 +30,8 @@ func main() {
 	//bookService := book.NewService(bookRepository)
 
 	router := gin.Default()
-	handler.NewBookHandler(&handler.Config{router}, db)
-
+	handler.NewBookHandler(&handler.ConfigBook{router}, db)
+	handler.NewAuthorHandler(&handler.ConfigAuthor{router}, db)
 	router.Run()
 }
 
