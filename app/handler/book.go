@@ -1,8 +1,11 @@
 package handler
 
 import (
+	"errors"
 	"fmt"
-	"github.com/Fadhli12/go-gin-gorm-playground/book"
+	"github.com/Fadhli12/go-gin-gorm-playground/app/book"
+	"github.com/Fadhli12/go-gin-gorm-playground/common"
+	"github.com/Fadhli12/go-gin-gorm-playground/model"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"gorm.io/gorm"
@@ -58,9 +61,16 @@ func (h *bookHandler) GetBook(c *gin.Context) {
 	id, _ := strconv.Atoi(idString)
 	bookById, err := h.bookService.FindByID(id)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{
+				"errors": common.ErrorRequest("not found", http.StatusNotFound),
+			})
+			return
+		}
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errors": err,
 		})
+		return
 	}
 	bookResponse := convertToBookResponse(bookById)
 	c.JSON(http.StatusOK, gin.H{
@@ -83,16 +93,16 @@ func (h *bookHandler) CreateBook(c *gin.Context) {
 		})
 		return
 	}
-	book, err := h.bookService.Create(bookPost)
+	createdBook, err := h.bookService.Create(bookPost)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errors": err,
 		})
 		return
 	}
-
+	bookResponse := convertToBookResponse(createdBook)
 	c.JSON(http.StatusOK, gin.H{
-		"data": book,
+		"data": bookResponse,
 	})
 }
 
@@ -100,7 +110,7 @@ func (h *bookHandler) UpdateBook(c *gin.Context) {
 	idString := c.Param("id")
 	id, _ := strconv.Atoi(idString)
 	var bookUpdate book.BookUpdate
-	err := c.ShouldBindJSON(&bookUpdate)
+	err := c.Bind(&bookUpdate)
 	if err != nil {
 		errorMessages := []string{}
 		for _, e := range err.(validator.ValidationErrors) {
@@ -111,14 +121,16 @@ func (h *bookHandler) UpdateBook(c *gin.Context) {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"errors": errorMessages,
 		})
+		return
 	}
-	book, err := h.bookService.Update(id, bookUpdate)
+	updatedBook, err := h.bookService.Update(id, bookUpdate)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errors": err,
 		})
+		return
 	}
-	bookResponse := convertToBookResponse(book)
+	bookResponse := convertToBookResponse(updatedBook)
 	c.JSON(http.StatusOK, gin.H{
 		"data": bookResponse,
 	})
@@ -127,19 +139,24 @@ func (h *bookHandler) UpdateBook(c *gin.Context) {
 func (h *bookHandler) DeleteBook(c *gin.Context) {
 	idString := c.Param("id")
 	id, _ := strconv.Atoi(idString)
-	book, err := h.bookService.Delete(id)
+	deletedBook, err := h.bookService.Delete(id)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errors": err,
 		})
 	}
-	bookResponse := convertToBookResponse(book)
+	bookResponse := convertToBookResponse(deletedBook)
 	c.JSON(http.StatusOK, gin.H{
 		"data": bookResponse,
 	})
 }
 
-func convertToBookResponse(b book.Book) book.BookResponse {
+func convertToBookResponse(b model.Book) book.BookResponse {
+	author := book.AuthorResponse{
+		Name:      b.Author.Name,
+		Email:     b.Author.Email,
+		Biography: b.Author.Biography,
+	}
 	return book.BookResponse{
 		ID:          b.ID,
 		Title:       b.Title,
@@ -147,5 +164,7 @@ func convertToBookResponse(b book.Book) book.BookResponse {
 		Description: b.Description,
 		Rating:      b.Rating,
 		Discount:    b.Discount,
+		AuthorID:    b.AuthorID,
+		Author:      author,
 	}
 }

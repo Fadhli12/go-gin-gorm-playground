@@ -8,6 +8,7 @@ type BookPost struct {
 	Description string      `json:"description" binding:"required"`
 	Rating      json.Number `json:"rating" binding:"required,number"`
 	Discount    json.Number `json:"discount" binding:"required,number"`
+	AuthorID    json.Number `json:"author_id" binding:"required,number"`
 }
 
 type BookUpdate struct {
@@ -16,4 +17,5 @@ type BookUpdate struct {
 	Description string      `json:"description" binding:"required"`
 	Rating      json.Number `json:"rating" binding:"required,number"`
 	Discount    json.Number `json:"discount" binding:"required,number"`
+	AuthorID    json.Number `json:"author_id" binding:"required,number"`
 }

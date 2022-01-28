@@ -1,8 +1,11 @@
 package handler
 
 import (
+	"errors"
 	"fmt"
-	"github.com/Fadhli12/go-gin-gorm-playground/author"
+	"github.com/Fadhli12/go-gin-gorm-playground/app/author"
+	"github.com/Fadhli12/go-gin-gorm-playground/common"
+	"github.com/Fadhli12/go-gin-gorm-playground/model"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"gorm.io/gorm"
@@ -58,6 +61,12 @@ func (h *authorHandler) GetAuthor(c *gin.Context) {
 	id, _ := strconv.Atoi(idString)
 	authorById, err := h.authorService.FindByID(id)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{
+				"errors": common.ErrorRequest("not found", http.StatusNotFound),
+			})
+			return
+		}
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errors": err,
 		})
@@ -83,16 +92,16 @@ func (h *authorHandler) CreateAuthor(c *gin.Context) {
 		})
 		return
 	}
-	author, err := h.authorService.Create(authorPost)
+	createdAuthor, err := h.authorService.Create(authorPost)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errors": err,
 		})
 		return
 	}
-
+	authorResponse := convertToAuthorResponse(createdAuthor)
 	c.JSON(http.StatusOK, gin.H{
-		"data": author,
+		"data": authorResponse,
 	})
 }
 
@@ -100,7 +109,7 @@ func (h *authorHandler) UpdateAuthor(c *gin.Context) {
 	idString := c.Param("id")
 	id, _ := strconv.Atoi(idString)
 	var authorUpdate author.AuthorUpdate
-	err := c.ShouldBindJSON(&authorUpdate)
+	err := c.Bind(&authorUpdate)
 	if err != nil {
 		errorMessages := []string{}
 		for _, e := range err.(validator.ValidationErrors) {
@@ -111,12 +120,14 @@ func (h *authorHandler) UpdateAuthor(c *gin.Context) {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"errors": errorMessages,
 		})
+		return
 	}
 	author, err := h.authorService.Update(id, authorUpdate)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errors": err,
 		})
+		return
 	}
 	authorResponse := convertToAuthorResponse(author)
 	c.JSON(http.StatusOK, gin.H{
@@ -139,7 +150,7 @@ func (h *authorHandler) DeleteAuthor(c *gin.Context) {
 	})
 }
 
-func convertToAuthorResponse(b author.Author) author.AuthorResponse {
+func convertToAuthorResponse(b model.Author) author.AuthorResponse {
 	return author.AuthorResponse{
 		ID:        b.ID,
 		Name:      b.Name,
