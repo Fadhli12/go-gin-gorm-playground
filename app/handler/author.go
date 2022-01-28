@@ -87,7 +87,7 @@ func (h *authorHandler) CreateAuthor(c *gin.Context) {
 			errorMessages = append(errorMessages, errorMessage)
 		}
 
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
+		c.JSON(http.StatusBadRequest, gin.H{
 			"errors": errorMessages,
 		})
 		return
@@ -117,7 +117,7 @@ func (h *authorHandler) UpdateAuthor(c *gin.Context) {
 			errorMessages = append(errorMessages, errorMessage)
 		}
 
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
+		c.JSON(http.StatusBadRequest, gin.H{
 			"errors": errorMessages,
 		})
 		return

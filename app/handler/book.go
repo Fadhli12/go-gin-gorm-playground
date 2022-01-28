@@ -87,8 +87,7 @@ func (h *bookHandler) CreateBook(c *gin.Context) {
 			errorMessage := fmt.Sprintf("Error on field %s, condition : %s", e.Field(), e.ActualTag())
 			errorMessages = append(errorMessages, errorMessage)
 		}
-
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
+		c.JSON(http.StatusBadRequest, gin.H{
 			"errors": errorMessages,
 		})
 		return
@@ -118,7 +117,7 @@ func (h *bookHandler) UpdateBook(c *gin.Context) {
 			errorMessages = append(errorMessages, errorMessage)
 		}
 
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
+		c.JSON(http.StatusBadRequest, gin.H{
 			"errors": errorMessages,
 		})
 		return
