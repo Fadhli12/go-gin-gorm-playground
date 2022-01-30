@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Fadhli12/go-gin-gorm-playground/app/author"
-	"github.com/Fadhli12/go-gin-gorm-playground/common"
 	"github.com/Fadhli12/go-gin-gorm-playground/model"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -59,7 +58,10 @@ func (h *authorHandler) GetAuthor(c *gin.Context) {
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{
-				"errors": common.ErrorRequest("not found", http.StatusNotFound),
+				"errors": map[string]string{
+					"status":  strconv.Itoa(http.StatusNotFound),
+					"message": "Not Found",
+				},
 			})
 			return
 		}
@@ -118,14 +120,14 @@ func (h *authorHandler) UpdateAuthor(c *gin.Context) {
 		})
 		return
 	}
-	author, err := h.authorService.Update(id, authorUpdate)
+	updatedAuthor, err := h.authorService.Update(id, authorUpdate)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errors": err,
 		})
 		return
 	}
-	authorResponse := convertToAuthorResponse(author)
+	authorResponse := convertToAuthorResponse(updatedAuthor)
 	c.JSON(http.StatusOK, gin.H{
 		"data": authorResponse,
 	})
@@ -134,13 +136,13 @@ func (h *authorHandler) UpdateAuthor(c *gin.Context) {
 func (h *authorHandler) DeleteAuthor(c *gin.Context) {
 	idString := c.Param("id")
 	id, _ := strconv.Atoi(idString)
-	author, err := h.authorService.Delete(id)
+	deletedAuthor, err := h.authorService.Delete(id)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errors": err,
 		})
 	}
-	authorResponse := convertToAuthorResponse(author)
+	authorResponse := convertToAuthorResponse(deletedAuthor)
 	c.JSON(http.StatusOK, gin.H{
 		"data": authorResponse,
 	})

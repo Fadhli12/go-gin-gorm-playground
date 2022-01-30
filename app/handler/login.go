@@ -3,8 +3,6 @@ package handler
 import (
 	"fmt"
 	"github.com/Fadhli12/go-gin-gorm-playground/app/auth"
-	"github.com/Fadhli12/go-gin-gorm-playground/common"
-	"github.com/Fadhli12/go-gin-gorm-playground/model"
 	"github.com/go-playground/validator/v10"
 	"gorm.io/gorm"
 	"net/http"
@@ -18,11 +16,13 @@ func NewLoginHandler(R *gin.Engine, db *gorm.DB) {
 	var loginHandler LoginHandler = authLoginHandler(loginService, jwtService)
 
 	g := R.Group("/auth")
-	g.POST("/", loginHandler.Login)
+	g.POST("/token", loginHandler.Login)
+	g.POST("/refresh-token", loginHandler.Login)
 }
 
 type LoginHandler interface {
-	Login(ctx *gin.Context)
+	Login(c *gin.Context)
+	RefreshToken(c *gin.Context)
 }
 
 type loginHandler struct {
@@ -40,7 +40,7 @@ func authLoginHandler(loginService auth.LoginService,
 
 func (h *loginHandler) Login(c *gin.Context) {
 
-	var credential model.LoginCredentials
+	var credential auth.LoginCredentials
 	err := c.ShouldBind(&credential)
 	if err != nil {
 		errorMessages := []string{}
@@ -54,15 +54,24 @@ func (h *loginHandler) Login(c *gin.Context) {
 		})
 		return
 	}
-	isUserAuthenticated := h.loginService.LoginUser(credential.Email, credential.Password)
-	if isUserAuthenticated {
-		token := h.jWtService.GenerateToken(credential.Email, true)
-		c.JSON(http.StatusOK, gin.H{
-			"token": token,
+	user, err := h.loginService.LoginUser(credential.Email, credential.Password)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": err,
 		})
-		return
 	}
-	c.JSON(http.StatusUnauthorized, gin.H{
-		"errors": common.ErrorRequest("user password not correct", http.StatusUnauthorized),
+	token, refreshToken := h.jWtService.GenerateToken(user, true)
+	userResponse := auth.UserResponse{
+		Name:  user.Name,
+		Email: user.Email,
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"token":         token,
+		"refresh_token": refreshToken,
+		"user":          userResponse,
 	})
+}
+
+func (h *loginHandler) RefreshToken(c *gin.Context) {
+
 }

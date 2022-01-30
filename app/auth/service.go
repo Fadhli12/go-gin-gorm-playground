@@ -1,14 +1,16 @@
 package auth
 
 import (
+	"github.com/Fadhli12/go-gin-gorm-playground/common"
 	"github.com/Fadhli12/go-gin-gorm-playground/model"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 	"log"
+	"net/http"
 )
 
 type LoginService interface {
-	LoginUser(email string, password string) bool
+	LoginUser(email string, password string) (model.User, error)
 }
 
 type auth struct {
@@ -18,11 +20,15 @@ type auth struct {
 func NewLoginService(db *gorm.DB) LoginService {
 	return &auth{db}
 }
-func (auth *auth) LoginUser(email string, password string) bool {
+
+func (auth *auth) LoginUser(email string, password string) (model.User, error) {
 	var user model.User
 	err := auth.db.Where("email = ?", email).First(&user).Error
 	pwd := []byte(password)
-	return err == nil && comparePasswords(user.Password, pwd)
+	if !comparePasswords(user.Password, pwd) {
+		return user, common.ErrorRequest("User Not Found", http.StatusUnauthorized)
+	}
+	return user, err
 }
 
 func HashAndSalt(pwd []byte) string {

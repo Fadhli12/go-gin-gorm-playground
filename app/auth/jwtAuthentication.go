@@ -2,15 +2,18 @@ package auth
 
 import (
 	"fmt"
+	"github.com/Fadhli12/go-gin-gorm-playground/model"
 	"os"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
 )
 
+const tokenExpired = 24
+
 //jwt service
 type JWTService interface {
-	GenerateToken(email string, isUser bool) string
+	GenerateToken(user model.User, isUser bool) (string, string)
 	ValidateToken(token string) (*jwt.Token, error)
 }
 type authCustomClaims struct {
@@ -21,14 +24,12 @@ type authCustomClaims struct {
 
 type jwtServices struct {
 	secretKey string
-	issuer    string
 }
 
 //auth-jwt
 func JWTAuthService() JWTService {
 	return &jwtServices{
 		secretKey: getSecretKey(),
-		issuer:    "Bikash",
 	}
 }
 
@@ -40,24 +41,34 @@ func getSecretKey() string {
 	return secret
 }
 
-func (service *jwtServices) GenerateToken(email string, isUser bool) string {
+func (service *jwtServices) GenerateToken(user model.User, isUser bool) (string, string) {
 	claims := &authCustomClaims{
-		email,
+		user.Email,
 		isUser,
 		jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(time.Hour * 48).Unix(),
-			Issuer:    service.issuer,
+			ExpiresAt: time.Now().Add(time.Hour * tokenExpired).Unix(),
+			Issuer:    user.Name,
+			IssuedAt:  time.Now().Unix(),
+		},
+	}
+	refreshClaims := &authCustomClaims{
+		user.Email,
+		isUser,
+		jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(time.Hour * 2 * tokenExpired).Unix(),
 			IssuedAt:  time.Now().Unix(),
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
 
 	//encoded string
 	t, err := token.SignedString([]byte(service.secretKey))
+	rt, err := refreshToken.SignedString([]byte(service.secretKey))
 	if err != nil {
 		panic(err)
 	}
-	return t
+	return t, rt
 }
 
 func (service *jwtServices) ValidateToken(encodedToken string) (*jwt.Token, error) {

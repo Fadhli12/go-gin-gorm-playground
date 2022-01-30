@@ -10,8 +10,3 @@ type User struct {
 }
 
 type Users []User
-
-type LoginCredentials struct {
-	Email    string `form:"email" binding:"required,email"`
-	Password string `form:"password" binding:"required"`
-}
