@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"log"
+	"os"
 )
 
 func main() {
@@ -25,7 +26,14 @@ func main() {
 	fmt.Println("DB Migration successfully")
 
 	router := gin.Default()
+	handler.NewLoginHandler(&handler.ConfigLogin{router}, db)
 	handler.NewBookHandler(&handler.ConfigBook{router}, db)
 	handler.NewAuthorHandler(&handler.ConfigAuthor{router}, db)
-	router.Run(":8080")
+
+	port := os.Getenv("WEB_PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	router.Run(":" + port)
 }

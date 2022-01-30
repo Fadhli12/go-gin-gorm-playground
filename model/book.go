@@ -6,7 +6,7 @@ import (
 
 type Book struct {
 	gorm.Model
-	Title       string `json:"title" gorm:"type:varchar(100);not null"`
+	Title       string `form:"title" json:"title" gorm:"type:varchar(100);not null"`
 	Description string `json:"description" gorm:"type:text;default:null"`
 	Price       int    `json:"price" gorm:"type:int(10);not null;default:0"`
 	Rating      int    `json:"rating" gorm:"type:int(1);not null;default:0"`
