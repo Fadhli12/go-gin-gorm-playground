@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"fmt"
-	"github.com/Fadhli12/go-gin-gorm-playground/service"
+	"github.com/Fadhli12/go-gin-gorm-playground/app/auth"
 	"net/http"
 
 	"github.com/dgrijalva/jwt-go"
@@ -14,7 +14,7 @@ func AuthorizeJWT() gin.HandlerFunc {
 		const BEARER_SCHEMA = "Bearer"
 		authHeader := c.GetHeader("Authorization")
 		tokenString := authHeader[len(BEARER_SCHEMA):]
-		token, err := service.JWTAuthService().ValidateToken(tokenString)
+		token, err := auth.JWTAuthService().ValidateToken(tokenString)
 		if token.Valid {
 			claims := token.Claims.(jwt.MapClaims)
 			fmt.Println(claims)

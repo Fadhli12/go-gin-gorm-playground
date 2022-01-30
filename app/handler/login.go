@@ -1,64 +1,68 @@
 package handler
 
 import (
+	"fmt"
+	"github.com/Fadhli12/go-gin-gorm-playground/app/auth"
+	"github.com/Fadhli12/go-gin-gorm-playground/common"
 	"github.com/Fadhli12/go-gin-gorm-playground/model"
-	"github.com/Fadhli12/go-gin-gorm-playground/service"
+	"github.com/go-playground/validator/v10"
 	"gorm.io/gorm"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
-type ConfigLogin struct {
-	R *gin.Engine
+func NewLoginHandler(R *gin.Engine, db *gorm.DB) {
+	var loginService auth.LoginService = auth.NewLoginService(db)
+	var jwtService auth.JWTService = auth.JWTAuthService()
+	var loginHandler LoginHandler = authLoginHandler(loginService, jwtService)
+
+	g := R.Group("/auth")
+	g.POST("/", loginHandler.Login)
 }
 
-func NewLoginHandler(c *ConfigLogin, db *gorm.DB) {
-	var loginService service.LoginService = service.StaticLoginService()
-	var jwtService service.JWTService = service.JWTAuthService()
-	var loginHandler LoginController = LoginHandler(loginService, jwtService)
-
-	g := c.R.Group("/auth")
-	g.POST("/login", func(context *gin.Context) {
-		token := loginHandler.Login(context)
-		if token != "" {
-			context.JSON(http.StatusOK, gin.H{
-				"token": token,
-			})
-		} else {
-			context.JSON(http.StatusUnauthorized, nil)
-		}
-	})
+type LoginHandler interface {
+	Login(ctx *gin.Context)
 }
 
-//login contorller interface
-type LoginController interface {
-	Login(ctx *gin.Context) string
+type loginHandler struct {
+	loginService auth.LoginService
+	jWtService   auth.JWTService
 }
 
-type loginController struct {
-	loginService service.LoginService
-	jWtService   service.JWTService
-}
-
-func LoginHandler(loginService service.LoginService,
-	jWtService service.JWTService) LoginController {
-	return &loginController{
+func authLoginHandler(loginService auth.LoginService,
+	jWtService auth.JWTService) LoginHandler {
+	return &loginHandler{
 		loginService: loginService,
 		jWtService:   jWtService,
 	}
 }
 
-func (h *loginController) Login(ctx *gin.Context) string {
+func (h *loginHandler) Login(c *gin.Context) {
+
 	var credential model.LoginCredentials
-	err := ctx.ShouldBind(&credential)
+	err := c.ShouldBind(&credential)
 	if err != nil {
-		return "no data found"
+		errorMessages := []string{}
+		for _, e := range err.(validator.ValidationErrors) {
+			errorMessage := fmt.Sprintf("Error on field %s, condition : %s", e.Field(), e.ActualTag())
+			errorMessages = append(errorMessages, errorMessage)
+		}
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errors": errorMessages,
+		})
+		return
 	}
 	isUserAuthenticated := h.loginService.LoginUser(credential.Email, credential.Password)
 	if isUserAuthenticated {
-		return h.jWtService.GenerateToken(credential.Email, true)
-
+		token := h.jWtService.GenerateToken(credential.Email, true)
+		c.JSON(http.StatusOK, gin.H{
+			"token": token,
+		})
+		return
 	}
-	return ""
+	c.JSON(http.StatusUnauthorized, gin.H{
+		"errors": common.ErrorRequest("user password not correct", http.StatusUnauthorized),
+	})
 }

@@ -17,17 +17,13 @@ type authorHandler struct {
 	authorService author.Service
 }
 
-type ConfigAuthor struct {
-	R *gin.Engine
-}
-
-func NewAuthorHandler(c *ConfigAuthor, db *gorm.DB) {
+func NewAuthorHandler(R *gin.Engine, db *gorm.DB) {
 
 	authorRepository := author.NewRepository(db)
 	authorService := author.NewService(authorRepository)
 	h := &authorHandler{authorService}
 
-	g := c.R.Group("/author")
+	g := R.Group("/author")
 	g.GET("/", h.GetAuthors)
 	g.GET("/:id", h.GetAuthor)
 	g.POST("/", h.CreateAuthor)
@@ -79,7 +75,7 @@ func (h *authorHandler) GetAuthor(c *gin.Context) {
 
 func (h *authorHandler) CreateAuthor(c *gin.Context) {
 	var authorPost author.AuthorPost
-	err := c.Bind(&authorPost)
+	err := c.ShouldBind(&authorPost)
 	if err != nil {
 		errorMessages := []string{}
 		for _, e := range err.(validator.ValidationErrors) {
@@ -109,7 +105,7 @@ func (h *authorHandler) UpdateAuthor(c *gin.Context) {
 	idString := c.Param("id")
 	id, _ := strconv.Atoi(idString)
 	var authorUpdate author.AuthorUpdate
-	err := c.Bind(&authorUpdate)
+	err := c.ShouldBind(&authorUpdate)
 	if err != nil {
 		errorMessages := []string{}
 		for _, e := range err.(validator.ValidationErrors) {

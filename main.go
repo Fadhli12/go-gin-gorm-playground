@@ -26,9 +26,10 @@ func main() {
 	fmt.Println("DB Migration successfully")
 
 	router := gin.Default()
-	handler.NewLoginHandler(&handler.ConfigLogin{router}, db)
-	handler.NewBookHandler(&handler.ConfigBook{router}, db)
-	handler.NewAuthorHandler(&handler.ConfigAuthor{router}, db)
+	handler.NewLoginHandler(router, db)
+	handler.NewUserHandler(router, db)
+	handler.NewBookHandler(router, db)
+	handler.NewAuthorHandler(router, db)
 
 	port := os.Getenv("WEB_PORT")
 	if port == "" {

@@ -17,17 +17,13 @@ type bookHandler struct {
 	bookService book.Service
 }
 
-type ConfigBook struct {
-	R *gin.Engine
-}
-
-func NewBookHandler(c *ConfigBook, db *gorm.DB) {
+func NewBookHandler(R *gin.Engine, db *gorm.DB) {
 
 	bookRepository := book.NewRepository(db)
 	bookService := book.NewService(bookRepository)
 	h := &bookHandler{bookService}
 
-	g := c.R.Group("/book")
+	g := R.Group("/book")
 	g.GET("/", h.GetBooks)
 	g.GET("/:id", h.GetBook)
 	g.POST("/", h.CreateBook)
@@ -80,7 +76,7 @@ func (h *bookHandler) GetBook(c *gin.Context) {
 
 func (h *bookHandler) CreateBook(c *gin.Context) {
 	var bookPost book.BookPost
-	err := c.Bind(&bookPost)
+	err := c.ShouldBind(&bookPost)
 	if err != nil {
 		errorMessages := []string{}
 		for _, e := range err.(validator.ValidationErrors) {
@@ -109,7 +105,7 @@ func (h *bookHandler) UpdateBook(c *gin.Context) {
 	idString := c.Param("id")
 	id, _ := strconv.Atoi(idString)
 	var bookUpdate book.BookUpdate
-	err := c.Bind(&bookUpdate)
+	err := c.ShouldBind(&bookUpdate)
 	if err != nil {
 		errorMessages := []string{}
 		for _, e := range err.(validator.ValidationErrors) {

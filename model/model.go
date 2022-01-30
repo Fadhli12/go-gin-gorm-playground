@@ -8,5 +8,6 @@ func RegisterModels() []Model {
 	return []Model{
 		{Book{}},
 		{Author{}},
+		{User{}},
 	}
 }

@@ -3,7 +3,7 @@ package book
 import "github.com/Fadhli12/go-gin-gorm-playground/model"
 
 type Service interface {
-	FindAll() ([]model.Book, error)
+	FindAll() (model.Books, error)
 	FindByID(ID int) (model.Book, error)
 	Create(bookPost BookPost) (model.Book, error)
 	Update(ID int, bookUpdate BookUpdate) (model.Book, error)
@@ -18,7 +18,7 @@ func NewService(repository Repository) *service {
 	return &service{repository}
 }
 
-func (s *service) FindAll() ([]model.Book, error) {
+func (s *service) FindAll() (model.Books, error) {
 	books, err := s.repository.FindAll()
 	return books, err
 }

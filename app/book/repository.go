@@ -6,7 +6,7 @@ import (
 )
 
 type Repository interface {
-	FindAll() ([]model.Book, error)
+	FindAll() (model.Books, error)
 	FindByID(ID int) (model.Book, error)
 	Create(book model.Book) (model.Book, error)
 	Update(book model.Book) (model.Book, error)
@@ -21,8 +21,8 @@ func NewRepository(db *gorm.DB) *repository {
 	return &repository{db}
 }
 
-func (r *repository) FindAll() ([]model.Book, error) {
-	var books []model.Book
+func (r *repository) FindAll() (model.Books, error) {
+	var books model.Books
 	err := r.db.Preload("Author").Find(&books).Error
 	return books, err
 }
